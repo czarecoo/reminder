@@ -6,8 +6,11 @@ import com.czareg.reminder.repository.ConsumedEventRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Slf4j
 @Service
@@ -19,10 +22,23 @@ public class ConsumedEventService {
         return consumedEventRepository.findAll();
     }
 
-    public void consume(Event event) {
-        ConsumedEvent consumedEvent = new ConsumedEvent();
-        consumedEvent.setEvent(event);
+    public Event consume(Event event) {
+        ConsumedEvent consumedEvent = ConsumedEvent.builder()
+                .event(event)
+                .build();
         consumedEventRepository.saveAndFlush(consumedEvent);
         log.info("Consumed event: {}", event);
+        return event;
+    }
+
+    public void delete(long id) {
+        ConsumedEvent consumedEvent = consumedEventRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND));
+        delete(consumedEvent);
+    }
+
+    public void delete(ConsumedEvent consumedEvent) {
+        consumedEventRepository.delete(consumedEvent);
+        log.info("Deleted consumedEvent: {}", consumedEvent);
     }
 }

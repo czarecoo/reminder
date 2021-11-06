@@ -4,14 +4,18 @@ import com.czareg.reminder.model.ConsumedEvent;
 import com.czareg.reminder.model.Event;
 import com.czareg.reminder.repository.EventRepository;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.function.Predicate;
 
 import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class EventService {
@@ -22,12 +26,21 @@ public class EventService {
         return eventRepository.findAll();
     }
 
+    public Event get(long id) {
+        return eventRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND));
+    }
+
     public Event createOrUpdate(Event event) {
         return eventRepository.saveAndFlush(event);
     }
 
-    public void delete(Long id) {
+    public void delete(long id) {
+        Event event = get(id);
+        event.getConsumedEvents()
+                .forEach(consumedEventService::delete);
         eventRepository.deleteById(id);
+        log.info("Deleted event: {}", event);
     }
 
     public List<Event> getConsumable() {
@@ -35,8 +48,12 @@ public class EventService {
                 .stream()
                 .filter(isToday())
                 .filter(wasNotAlreadyConsumedToday())
-                .peek(consumedEventService::consume)
                 .collect(toList());
+    }
+
+    public Event consume(long id) {
+        Event eventFromDb = get(id);
+        return consumedEventService.consume(eventFromDb);
     }
 
     private Predicate<Event> isToday() {

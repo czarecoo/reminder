@@ -18,18 +18,28 @@ public class EventController {
         return eventService.getAll();
     }
 
+    @GetMapping("/{id}")
+    public Event get(@PathVariable long id) {
+        return eventService.get(id);
+    }
+
     @PostMapping
     public Event createOrUpdate(@RequestBody Event event) {
         return eventService.createOrUpdate(event);
     }
 
-    @DeleteMapping({"/{id}"})
-    public void delete(@PathVariable Long id) {
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable long id) {
         eventService.delete(id);
     }
 
     @GetMapping("/consumable")
     public List<Event> getConsumable() {
         return eventService.getConsumable();
+    }
+
+    @PostMapping("/consume/{id}")
+    public Event consume(@PathVariable long id) {
+        return eventService.consume(id);
     }
 }
